@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Logo } from "@/components/shared/Logo";
 
-const navLinks = ["How it works", "Sample report", "Pricing", "Fleets", "Shops"];
+const navLinks = ["How it works", "Sample report", "Pricing", "FAQ"];
 
 export function LandingNav() {
   const router = useRouter();
@@ -24,11 +24,6 @@ export function LandingNav() {
           ))}
         </nav>
         <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 10 }}>
-          <Link href="/dashboard" style={{
-            display: "inline-flex", alignItems: "center", gap: 8, height: 36, padding: "0 14px",
-            borderRadius: 10, border: "1px solid transparent", background: "transparent",
-            color: "var(--text)", fontSize: 13, fontWeight: 500, textDecoration: "none"
-          }}>Fleet demo</Link>
           <Link href="/sign-in" style={{
             display: "inline-flex", alignItems: "center", height: 36, padding: "0 14px",
             borderRadius: 10, border: "1px solid var(--border-strong)", background: "var(--surface)",

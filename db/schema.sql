@@ -49,8 +49,8 @@ create table estimates (
   vehicle_id uuid references vehicles(id),
   guest_session_id text,  -- for unauthenticated flow
   tier text not null default 'tier1' check (tier in ('tier1','tier2')),
-  status text not null default 'draft' check (status in (
-    'draft','photos_pending','processing','ready',
+  status text not null default 'pending' check (status in (
+    'draft','pending','photos_pending','processing','ready','error',
     'sent_to_shop','quote_received','approved','repair_complete','closed'
   )),
   severity text check (severity in ('Minor','Moderate','Severe')),
@@ -64,18 +64,21 @@ create table estimates (
   labor_rate int not null default 149,
   notes text,
   hotspots jsonb default '[]',
+  reasoning jsonb,
   stripe_payment_id text,
   ai_tokens_in int,
   ai_tokens_out int,
   -- incident details
-  incident_when timestamptz,
-  incident_location text,
   incident_type text,
+  incident_description text,
+  incident_location text,
+  incident_date text,
   incident_speed text,
   incident_fault text,
   incident_injuries text,
   incident_police boolean default false,
-  incident_notes text,
+  airbags_deploy boolean not null default false,
+  driveable boolean not null default true,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -128,6 +131,7 @@ create table estimate_photos (
   angle_label text,
   hash text,
   gps text,
+  guest_session_id text,
   captured_at timestamptz not null default now()
 );
 
@@ -226,10 +230,10 @@ create policy "capture_tokens: valid read" on capture_tokens
   );
 
 -- Storage bucket for photos
-insert into storage.buckets (id, name, public) values ('estimate-photos', 'estimate-photos', false);
-create policy "photos: authenticated upload"
+insert into storage.buckets (id, name, public) values ('photos', 'photos', true);
+create policy "photos: anyone can upload"
   on storage.objects for insert
-  with check (bucket_id = 'estimate-photos');
-create policy "photos: org read"
+  with check (bucket_id = 'photos');
+create policy "photos: public read"
   on storage.objects for select
-  using (bucket_id = 'estimate-photos');
+  using (bucket_id = 'photos');

@@ -1,17 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { DamageMap } from "@/components/result/DamageMap";
 import { LineItems } from "@/components/result/LineItems";
 import { ReasoningPanel } from "@/components/result/ReasoningPanel";
 import { Logo } from "@/components/shared/Logo";
 import { fmt, fmtRange } from "@/lib/utils";
-import type { Estimate } from "@/lib/types";
 
 interface Props {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   estimate: any;
+  userId: string | null;
 }
 
 const SEV_COLOR: Record<string, string> = {
@@ -20,9 +21,16 @@ const SEV_COLOR: Record<string, string> = {
   Severe: "var(--danger)",
 };
 
-export function ResultClient({ estimate }: Props) {
+export function ResultClient({ estimate, userId }: Props) {
   const [unlocking, setUnlocking] = useState(false);
+  const [guestSession, setGuestSession] = useState("");
+  const searchParams = useSearchParams();
+  const paymentSuccess = searchParams.get("payment") === "success";
   const isTier2 = estimate.tier === "tier2";
+
+  useEffect(() => {
+    setGuestSession(sessionStorage.getItem("guestSession") ?? "");
+  }, []);
 
   async function handleUnlock() {
     setUnlocking(true);
@@ -54,7 +62,11 @@ export function ResultClient({ estimate }: Props) {
         <Logo />
         <div style={{ marginLeft: "auto", display: "flex", gap: 10 }}>
           <Link href="/estimate" style={{ fontSize: 13, color: "var(--text-2)", textDecoration: "none" }}>New estimate</Link>
-          <Link href="/sign-up" style={{ display: "inline-flex", alignItems: "center", height: 34, padding: "0 14px", borderRadius: 8, background: "var(--accent)", color: "white", fontSize: 13, fontWeight: 500, textDecoration: "none" }}>Save to dashboard</Link>
+          {userId ? (
+            <Link href="/dashboard" style={{ display: "inline-flex", alignItems: "center", height: 34, padding: "0 14px", borderRadius: 8, background: "var(--accent)", color: "white", fontSize: 13, fontWeight: 500, textDecoration: "none" }}>My reports</Link>
+          ) : (
+            <Link href={`/sign-in`} style={{ display: "inline-flex", alignItems: "center", height: 34, padding: "0 14px", borderRadius: 8, border: "1px solid var(--border-strong)", background: "var(--surface)", color: "var(--text)", fontSize: 13, fontWeight: 500, textDecoration: "none" }}>Sign in</Link>
+          )}
         </div>
       </header>
 
@@ -94,6 +106,21 @@ export function ResultClient({ estimate }: Props) {
             </p>
           )}
         </div>
+
+        {/* Post-payment account claim banner */}
+        {paymentSuccess && isTier2 && !userId && (
+          <div style={{ background: "var(--success-soft, oklch(0.97 0.05 145))", border: "1px solid var(--success)", borderRadius: 14, padding: "18px 22px", marginBottom: 24, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 4 }}>Your full report is unlocked!</div>
+              <div style={{ fontSize: 13, color: "var(--text-2)" }}>Create a free account to save it and access it anytime.</div>
+            </div>
+            <Link
+              href={`/sign-up${guestSession ? `?guestSession=${guestSession}` : ""}`}
+              style={{ display: "inline-flex", alignItems: "center", gap: 6, height: 38, padding: "0 18px", borderRadius: 10, background: "var(--accent)", color: "white", fontSize: 13, fontWeight: 600, textDecoration: "none", whiteSpace: "nowrap" }}>
+              Create free account →
+            </Link>
+          </div>
+        )}
 
         {/* Damage map */}
         {hotspots.length > 0 && (

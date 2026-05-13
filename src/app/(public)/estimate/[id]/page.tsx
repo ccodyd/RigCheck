@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { createServiceClient } from "@/lib/supabase/server";
+import { createServerClient, createServiceClient } from "@/lib/supabase/server";
 import { ResultClient } from "./ResultClient";
 
 interface Props {
@@ -8,15 +8,22 @@ interface Props {
 
 export default async function EstimateResultPage({ params }: Props) {
   const { id } = await params;
-  const supabase = await createServiceClient();
 
-  const { data: estimate } = await supabase
-    .from("estimates")
-    .select(`*, estimate_line_items(*), estimate_photos(*), vehicles(*)`)
-    .eq("id", id)
-    .single();
+  const [supabase, service] = await Promise.all([
+    createServerClient(),
+    createServiceClient(),
+  ]);
+
+  const [{ data: { user } }, { data: estimate }] = await Promise.all([
+    supabase.auth.getUser(),
+    service
+      .from("estimates")
+      .select(`*, estimate_line_items(*), estimate_photos(*), vehicles(*)`)
+      .eq("id", id)
+      .single(),
+  ]);
 
   if (!estimate) notFound();
 
-  return <ResultClient estimate={estimate} />;
+  return <ResultClient estimate={estimate} userId={user?.id ?? null} />;
 }

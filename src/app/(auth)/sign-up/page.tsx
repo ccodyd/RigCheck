@@ -3,13 +3,16 @@
 export const dynamic = "force-dynamic";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import Link from "next/link";
 import { createBrowserClient } from "@/lib/supabase/client";
 import { Logo } from "@/components/shared/Logo";
 
-export default function SignUpPage() {
+function SignUpForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const guestSession = searchParams.get("guestSession") ?? "";
   const supabase = createBrowserClient();
 
   const [name, setName] = useState("");
@@ -28,7 +31,7 @@ export default function SignUpPage() {
       password,
       options: {
         data: { full_name: name },
-        emailRedirectTo: `${location.origin}/api/auth/callback?redirect=/dashboard`,
+        emailRedirectTo: `${location.origin}/api/auth/callback?redirect=/dashboard${guestSession ? `&guestSession=${guestSession}` : ""}`,
       },
     });
     if (err) {
@@ -42,7 +45,7 @@ export default function SignUpPage() {
   async function handleGoogle() {
     await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${location.origin}/api/auth/callback?redirect=/dashboard` },
+      options: { redirectTo: `${location.origin}/api/auth/callback?redirect=/dashboard${guestSession ? `&guestSession=${guestSession}` : ""}` },
     });
   }
 
@@ -116,5 +119,13 @@ export default function SignUpPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function SignUpPage() {
+  return (
+    <Suspense fallback={<div style={{ minHeight: "100vh", background: "var(--bg)" }} />}>
+      <SignUpForm />
+    </Suspense>
   );
 }

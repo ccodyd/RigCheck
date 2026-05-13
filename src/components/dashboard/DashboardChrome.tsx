@@ -5,10 +5,7 @@ import { usePathname } from "next/navigation";
 import { Logo } from "@/components/shared/Logo";
 
 const NAV_ITEMS = [
-  { href: "/dashboard", label: "Dashboard", icon: "◈" },
-  { href: "/estimates", label: "Estimates", icon: "📋" },
-  { href: "/vehicles", label: "Vehicles", icon: "🚛" },
-  { href: "/shops", label: "Shops", icon: "🔧" },
+  { href: "/dashboard", label: "My Reports", icon: "📋" },
 ];
 
 export function DashboardChrome({ children }: { children: React.ReactNode }) {
