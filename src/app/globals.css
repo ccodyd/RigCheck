@@ -1,0 +1,81 @@
+@import "tailwindcss";
+
+/* ── RigCheck design tokens (ported from prototype) ── */
+:root {
+  --bg: oklch(0.985 0.005 80);
+  --surface: #ffffff;
+  --surface-2: oklch(0.97 0.006 80);
+  --surface-3: oklch(0.95 0.008 80);
+  --border: oklch(0.91 0.008 80);
+  --border-strong: oklch(0.84 0.012 80);
+  --text: oklch(0.21 0.012 80);
+  --text-2: oklch(0.42 0.012 80);
+  --muted: oklch(0.58 0.012 80);
+  --accent: oklch(0.66 0.16 45);
+  --accent-2: oklch(0.74 0.14 45);
+  --accent-soft: oklch(0.96 0.04 50);
+  --accent-ink: oklch(0.32 0.13 40);
+  --success: oklch(0.65 0.13 155);
+  --success-soft: oklch(0.95 0.04 155);
+  --warn: oklch(0.78 0.14 75);
+  --warn-soft: oklch(0.96 0.05 80);
+  --danger: oklch(0.62 0.2 25);
+  --danger-soft: oklch(0.96 0.04 25);
+  --info: oklch(0.62 0.13 240);
+  --info-soft: oklch(0.96 0.03 240);
+  --r-sm: 8px; --r-md: 12px; --r-lg: 16px; --r-xl: 22px;
+  --shadow-1: 0 1px 0 rgba(20,16,8,.04), 0 1px 2px rgba(20,16,8,.04);
+  --shadow-2: 0 1px 0 rgba(20,16,8,.04), 0 8px 24px -10px rgba(20,16,8,.12);
+  --shadow-3: 0 20px 60px -20px rgba(20,16,8,.22), 0 4px 16px -8px rgba(20,16,8,.12);
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  --bg: oklch(0.18 0.01 80);
+  --surface: oklch(0.22 0.012 80);
+  --surface-2: oklch(0.25 0.012 80);
+  --surface-3: oklch(0.28 0.012 80);
+  --border: oklch(0.32 0.012 80);
+  --border-strong: oklch(0.4 0.012 80);
+  --text: oklch(0.96 0.006 80);
+  --text-2: oklch(0.78 0.01 80);
+  --muted: oklch(0.62 0.012 80);
+  --accent-soft: oklch(0.32 0.06 50);
+  --accent-ink: oklch(0.92 0.05 50);
+  --success-soft: oklch(0.3 0.06 155);
+  --warn-soft: oklch(0.32 0.06 80);
+  --danger-soft: oklch(0.3 0.06 25);
+  --info-soft: oklch(0.28 0.05 240);
+  --shadow-1: 0 1px 0 rgba(0,0,0,.3), 0 1px 2px rgba(0,0,0,.3);
+  --shadow-2: 0 1px 0 rgba(0,0,0,.3), 0 8px 24px -10px rgba(0,0,0,.5);
+  --shadow-3: 0 20px 60px -20px rgba(0,0,0,.6), 0 4px 16px -8px rgba(0,0,0,.4);
+  color-scheme: dark;
+}
+
+@theme inline {
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
+body {
+  font-family: var(--font-sans), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  min-height: 100vh;
+}
+
+/* Animations */
+@keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.fade-up { animation: fadeUp .35s cubic-bezier(.2,.7,.3,1) both; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin { animation: spin 1s linear infinite; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 10px; border: 2px solid var(--bg); }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* Focus */
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
