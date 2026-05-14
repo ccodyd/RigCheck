@@ -4,7 +4,8 @@ import { createServerClient, createServiceClient } from "@/lib/supabase/server";
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = request.nextUrl;
   const code = searchParams.get("code");
-  const redirect = searchParams.get("redirect") ?? "/dashboard";
+  const redirectParam = searchParams.get("redirect");
+  const redirect = redirectParam ?? "/dashboard";
   const guestSession = searchParams.get("guestSession");
 
   if (code) {
@@ -53,5 +54,7 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  return NextResponse.redirect(`${origin}${redirect}`);
+  // Email confirmation links (no explicit redirect param) go to the confirmed page
+  const destination = redirectParam ? redirect : "/auth/confirmed";
+  return NextResponse.redirect(`${origin}${destination}`);
 }

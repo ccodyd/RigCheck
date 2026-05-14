@@ -31,7 +31,7 @@ function SignUpForm() {
       password,
       options: {
         data: { full_name: name },
-        emailRedirectTo: `${location.origin}/api/auth/callback?redirect=/dashboard${guestSession ? `&guestSession=${guestSession}` : ""}`,
+        emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL || location.origin}/api/auth/callback?redirect=/auth/confirmed${guestSession ? `&guestSession=${guestSession}` : ""}`,
       },
     });
     if (err) {

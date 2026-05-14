@@ -42,7 +42,26 @@ export async function POST(request: NextRequest) {
       driveable: estimate.driveable,
     };
 
-    const result = await analyzeWithClaude(
+    const mockResult = process.env.MOCK_AI === "true" ? {
+      tier1Low: 4200,
+      tier1High: 6800,
+      severity: "Moderate" as const,
+      confidence: 0.82,
+      teardown: false,
+      headline: "Front-end collision damage with moderate structural impact",
+      laborRate: 149,
+      notes: "Mock estimate — set MOCK_AI=true in env vars. Remove for production.",
+      hotspots: [{ x: 0.25, y: 0.4, label: "Hood" }, { x: 0.18, y: 0.55, label: "Bumper" }],
+      reasoning: { summary: "Mock AI analysis for testing purposes." },
+      lineItems: [
+        { part: "Hood", action: "Replace", severity: "Moderate", confidence: 0.9, partNo: null, partCost: 1200, hours: 2.5 },
+        { part: "Front Bumper Cover", action: "Replace", severity: "Moderate", confidence: 0.88, partNo: null, partCost: 480, hours: 1.5 },
+        { part: "Grille Assembly", action: "Replace", severity: "Minor", confidence: 0.85, partNo: null, partCost: 320, hours: 0.8 },
+        { part: "Radiator Support", action: "Repair", severity: "Moderate", confidence: 0.75, partNo: null, partCost: 0, hours: 3.0 },
+      ],
+    } : null;
+
+    const result = mockResult ?? await analyzeWithClaude(
       photoUrls,
       estimate.vehicles?.vin ?? "",
       incident,

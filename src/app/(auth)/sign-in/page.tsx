@@ -35,7 +35,7 @@ function SignInForm() {
   async function handleGoogle() {
     await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${location.origin}/api/auth/callback?redirect=${redirect}` },
+      options: { redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || location.origin}/api/auth/callback?redirect=${redirect}` },
     });
   }
 

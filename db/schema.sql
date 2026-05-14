@@ -1,11 +1,10 @@
 -- RigCheck database schema
--- Run in Supabase SQL editor
+-- Safe to run multiple times (idempotent)
 
--- Enable UUID extension
 create extension if not exists "uuid-ossp";
 
 -- Organizations (fleets)
-create table organizations (
+create table if not exists organizations (
   id uuid primary key default uuid_generate_v4(),
   name text not null,
   plan text not null default 'free' check (plan in ('free','owner_op','small_fleet','mid_fleet','enterprise')),
@@ -15,7 +14,7 @@ create table organizations (
 );
 
 -- User profiles (extends auth.users)
-create table users (
+create table if not exists users (
   id uuid primary key references auth.users(id) on delete cascade,
   full_name text,
   org_id uuid references organizations(id),
@@ -24,7 +23,7 @@ create table users (
 );
 
 -- Vehicles
-create table vehicles (
+create table if not exists vehicles (
   id uuid primary key default uuid_generate_v4(),
   org_id uuid references organizations(id),
   vin text not null,
@@ -42,12 +41,12 @@ create table vehicles (
 );
 
 -- Estimates
-create table estimates (
+create table if not exists estimates (
   id uuid primary key default uuid_generate_v4(),
-  rc_number text unique not null,  -- RC-XXXX
+  rc_number text unique not null default '',
   org_id uuid references organizations(id),
   vehicle_id uuid references vehicles(id),
-  guest_session_id text,  -- for unauthenticated flow
+  guest_session_id text,
   tier text not null default 'tier1' check (tier in ('tier1','tier2')),
   status text not null default 'pending' check (status in (
     'draft','pending','photos_pending','processing','ready','error',
@@ -68,7 +67,6 @@ create table estimates (
   stripe_payment_id text,
   ai_tokens_in int,
   ai_tokens_out int,
-  -- incident details
   incident_type text,
   incident_description text,
   incident_location text,
@@ -84,7 +82,8 @@ create table estimates (
 );
 
 -- Auto-generate RC number
-create sequence estimate_rc_seq start 2400;
+create sequence if not exists estimate_rc_seq start 2400;
+
 create or replace function set_rc_number()
 returns trigger language plpgsql as $$
 begin
@@ -94,6 +93,8 @@ begin
   return new;
 end;
 $$;
+
+drop trigger if exists estimate_rc_before_insert on estimates;
 create trigger estimate_rc_before_insert
   before insert on estimates
   for each row execute function set_rc_number();
@@ -103,12 +104,14 @@ create or replace function update_updated_at()
 returns trigger language plpgsql as $$
 begin new.updated_at = now(); return new; end;
 $$;
+
+drop trigger if exists estimates_updated_at on estimates;
 create trigger estimates_updated_at
   before update on estimates
   for each row execute function update_updated_at();
 
 -- Line items
-create table estimate_line_items (
+create table if not exists estimate_line_items (
   id uuid primary key default uuid_generate_v4(),
   estimate_id uuid not null references estimates(id) on delete cascade,
   part text not null,
@@ -124,7 +127,7 @@ create table estimate_line_items (
 );
 
 -- Photos
-create table estimate_photos (
+create table if not exists estimate_photos (
   id uuid primary key default uuid_generate_v4(),
   estimate_id uuid not null references estimates(id) on delete cascade,
   storage_path text not null,
@@ -136,7 +139,7 @@ create table estimate_photos (
 );
 
 -- Capture tokens (for SMS driver flow)
-create table capture_tokens (
+create table if not exists capture_tokens (
   id uuid primary key default uuid_generate_v4(),
   estimate_id uuid not null references estimates(id) on delete cascade,
   token text not null unique,
@@ -146,8 +149,8 @@ create table capture_tokens (
   created_at timestamptz not null default now()
 );
 
--- Nearby shops (static seed data)
-create table shops (
+-- Nearby shops
+create table if not exists shops (
   id uuid primary key default uuid_generate_v4(),
   name text not null,
   city text not null,
@@ -158,12 +161,13 @@ create table shops (
   lng float
 );
 
--- Seed shops from playbook
+-- Seed shops (skip if already present)
 insert into shops (name, city, rating, rate, distance) values
   ('Blaine Brothers Heavy Truck Repair', 'Clearwater, MN', 4.6, 142, 18),
   ('OTR Performance — Fort Worth', 'Fort Worth, TX', 4.7, 155, 6),
   ('MJ Truck Nation Body Shop', 'Houston, TX', 4.3, 138, 42),
-  ('TA Petro Truck Service #214', 'Sweetwater, TX', 4.0, 168, 73);
+  ('TA Petro Truck Service #214', 'Sweetwater, TX', 4.0, 168, 73)
+on conflict do nothing;
 
 -- Row Level Security
 alter table organizations enable row level security;
@@ -175,31 +179,31 @@ alter table estimate_photos enable row level security;
 alter table capture_tokens enable row level security;
 alter table shops enable row level security;
 
--- RLS policies
--- Users can see their own profile
+-- RLS policies (drop first so re-runs don't error)
+drop policy if exists "users: own profile" on users;
 create policy "users: own profile" on users
   for all using (auth.uid() = id);
 
--- Users can see their org
+drop policy if exists "organizations: members" on organizations;
 create policy "organizations: members" on organizations
   for select using (
     id in (select org_id from users where id = auth.uid())
   );
 
--- Vehicles: org members
+drop policy if exists "vehicles: org members" on vehicles;
 create policy "vehicles: org members" on vehicles
   for all using (
     org_id in (select org_id from users where id = auth.uid())
   );
 
--- Estimates: org members OR guest session
+drop policy if exists "estimates: org members" on estimates;
 create policy "estimates: org members" on estimates
   for all using (
     org_id in (select org_id from users where id = auth.uid())
     or guest_session_id = current_setting('request.headers', true)::json->>'x-guest-session'
   );
 
--- Line items: via estimate
+drop policy if exists "line_items: via estimate" on estimate_line_items;
 create policy "line_items: via estimate" on estimate_line_items
   for all using (
     estimate_id in (
@@ -209,7 +213,7 @@ create policy "line_items: via estimate" on estimate_line_items
     )
   );
 
--- Photos: via estimate
+drop policy if exists "photos: via estimate" on estimate_photos;
 create policy "photos: via estimate" on estimate_photos
   for all using (
     estimate_id in (
@@ -219,21 +223,27 @@ create policy "photos: via estimate" on estimate_photos
     )
   );
 
--- Shops: public read
+drop policy if exists "shops: public read" on shops;
 create policy "shops: public read" on shops
   for select using (true);
 
--- Capture tokens: valid token read (for driver)
+drop policy if exists "capture_tokens: valid read" on capture_tokens;
 create policy "capture_tokens: valid read" on capture_tokens
   for select using (
     expires_at > now() and not used
   );
 
--- Storage bucket for photos
-insert into storage.buckets (id, name, public) values ('photos', 'photos', true);
+-- Storage bucket for photos (skip if already exists)
+insert into storage.buckets (id, name, public)
+  values ('photos', 'photos', true)
+  on conflict (id) do nothing;
+
+drop policy if exists "photos: anyone can upload" on storage.objects;
 create policy "photos: anyone can upload"
   on storage.objects for insert
   with check (bucket_id = 'photos');
+
+drop policy if exists "photos: public read" on storage.objects;
 create policy "photos: public read"
   on storage.objects for select
   using (bucket_id = 'photos');
