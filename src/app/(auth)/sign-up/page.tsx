@@ -70,7 +70,7 @@ function SignUpForm() {
         <div style={{ textAlign: "center", marginBottom: 32 }}>
           <Logo />
           <h1 style={{ fontSize: 24, fontWeight: 600, margin: "20px 0 6px", letterSpacing: "-0.025em" }}>Create your account</h1>
-          <p style={{ color: "var(--text-2)", fontSize: 14 }}>Free fleet dashboard · no card required</p>
+          <p style={{ color: "var(--text-2)", fontSize: 14 }}>Free damage estimate · no card required</p>
         </div>
 
         <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 16, padding: 28 }}>

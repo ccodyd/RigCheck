@@ -45,7 +45,7 @@ function SignInForm() {
         <div style={{ textAlign: "center", marginBottom: 32 }}>
           <Logo />
           <h1 style={{ fontSize: 24, fontWeight: 600, margin: "20px 0 6px", letterSpacing: "-0.025em" }}>Welcome back</h1>
-          <p style={{ color: "var(--text-2)", fontSize: 14 }}>Sign in to your fleet account</p>
+          <p style={{ color: "var(--text-2)", fontSize: 14 }}>Sign in to your account</p>
         </div>
 
         <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 16, padding: 28 }}>
