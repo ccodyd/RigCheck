@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
 
   // Upsert vehicle if we have a VIN
   if (vin) {
-    const { data: v } = await service.from("vehicles").insert({
+    const { data: v, error: vErr } = await service.from("vehicles").insert({
       vin,
       year: vehicle.year,
       make: vehicle.make,
@@ -36,6 +36,7 @@ export async function POST(request: NextRequest) {
       trim: vehicle.trim,
       org_id: orgId,
     }).select("id").single();
+    if (vErr) console.error("Vehicle insert error:", vErr);
     vehicleId = v?.id ?? null;
   }
 
@@ -55,7 +56,7 @@ export async function POST(request: NextRequest) {
 
   if (error || !estimate) {
     console.error("Estimate insert error:", error);
-    return NextResponse.json({ error: "DB error" }, { status: 500 });
+    return NextResponse.json({ error: error?.message ?? "DB error" }, { status: 500 });
   }
 
   return NextResponse.json({ id: estimate.id }, { status: 201 });
