@@ -44,7 +44,10 @@ export function WizardShell() {
         headers: { "Content-Type": "application/json", "X-Guest-Session": sessionId },
         body: JSON.stringify({ vin, vehicle, incident }),
       });
-      if (!createRes.ok) throw new Error("Failed to create estimate");
+      if (!createRes.ok) {
+        const body = await createRes.json().catch(() => ({}));
+        throw new Error(`Create estimate failed (${createRes.status}): ${body.error ?? "unknown"}`);
+      }
       const { id } = await createRes.json();
 
       // Upload photos
@@ -54,11 +57,14 @@ export function WizardShell() {
           headers: { "X-Guest-Session": sessionId, "X-Estimate-Id": id, "X-Filename": file.name, "Content-Type": file.type },
           body: file,
         });
-        if (!uploadRes.ok) throw new Error("Photo upload failed");
+        if (!uploadRes.ok) {
+          const body = await uploadRes.json().catch(() => ({}));
+          throw new Error(`Photo upload failed (${uploadRes.status}): ${body.error ?? "unknown"}`);
+        }
       }
 
-      // Trigger AI analysis
-      await fetch("/api/ai/analyze", {
+      // Trigger AI analysis (fire-and-forget; processing page polls for result)
+      fetch("/api/ai/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json", "X-Guest-Session": sessionId },
         body: JSON.stringify({ estimateId: id }),
@@ -67,9 +73,9 @@ export function WizardShell() {
       // Store session for result page
       sessionStorage.setItem("guestSession", sessionId);
       router.push(`/estimate/processing?id=${id}`);
-    } catch {
+    } catch (err) {
       setSubmitting(false);
-      alert("Something went wrong. Please try again.");
+      alert("Something went wrong: " + (err instanceof Error ? err.message : String(err)));
     }
   }
 
